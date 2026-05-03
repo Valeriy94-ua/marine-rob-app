@@ -1,4 +1,4 @@
-import { Moon, Sun, Monitor, Globe, Star, Info, Mail } from 'lucide-react';
+import { Moon, Sun, Monitor, Globe, Star, Info, Mail, CheckCircle } from 'lucide-react';
 import type { Theme } from '../theme';
 import type { Locale, TKey } from '../i18n';
 import { t, LOCALE_LABELS } from '../i18n';
@@ -21,6 +21,8 @@ export default function SettingsScreen({ theme, locale, adFree, onTheme, onLocal
 
   return (
     <div className="p-4 space-y-4">
+
+      {/* Theme */}
       <div className="th-card border rounded-2xl p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2" style={{color:'var(--text-primary)'}}><Moon size={15}/> {T('theme')}</h3>
         <div className="flex gap-2">
@@ -32,6 +34,8 @@ export default function SettingsScreen({ theme, locale, adFree, onTheme, onLocal
           ))}
         </div>
       </div>
+
+      {/* Language */}
       <div className="th-card border rounded-2xl p-4 space-y-3">
         <h3 className="font-semibold text-sm flex items-center gap-2" style={{color:'var(--text-primary)'}}><Globe size={15}/> {T('language')}</h3>
         <div className="grid grid-cols-3 gap-2">
@@ -43,28 +47,57 @@ export default function SettingsScreen({ theme, locale, adFree, onTheme, onLocal
           ))}
         </div>
       </div>
+
+      {/* Remove Ads */}
       {!adFree ? (
         <div className="th-card border rounded-2xl p-4 space-y-3">
-          <h3 className="font-semibold text-sm flex items-center gap-2" style={{color:'var(--text-primary)'}}><Star size={15}/> {T('removeAds')}</h3>
-          <p className="text-xs" style={{color:'var(--text-secondary)'}}>{T('removeAdsDesc')}</p>
-          <button onClick={onRemoveAds} className="w-full bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl py-3 text-sm transition-colors">{T('removeAdsPrice')}</button>
+          <h3 className="font-semibold text-sm flex items-center gap-2" style={{color:'var(--text-primary)'}}>
+            <Star size={15}/> {T('removeAds')}
+          </h3>
+          <ul className="space-y-1">
+            {['Remove all banner ads forever','One-time payment — no subscription','Supports the developer ⚓'].map(item=>(
+              <li key={item} className="text-xs flex items-center gap-2" style={{color:'var(--text-secondary)'}}>
+                <span className="text-emerald-400">✓</span> {item}
+              </li>
+            ))}
+          </ul>
+          <button
+            onClick={onRemoveAds}
+            className="w-full bg-amber-500 hover:bg-amber-400 active:scale-95 text-black font-bold rounded-xl py-3 text-sm transition-all shadow-lg shadow-amber-900/30"
+          >
+            🔓 {T('removeAdsPrice')}
+          </button>
+          <p className="text-xs text-center" style={{color:'var(--text-muted)'}}>
+            Secure payment via Google Play
+          </p>
         </div>
       ) : (
-        <div className="th-card border border-emerald-700 rounded-2xl p-4 text-center">
-          <p className="text-emerald-400 font-semibold">✓ Ad-free</p>
-          <p className="text-xs mt-1" style={{color:'var(--text-muted)'}}>Thank you for supporting Marine ROB!</p>
+        <div className="rounded-2xl p-5 text-center space-y-2 border border-emerald-600"
+          style={{background:'rgba(16,185,129,0.08)'}}>
+          <CheckCircle size={32} className="mx-auto text-emerald-400"/>
+          <p className="font-bold text-emerald-400 text-lg">Ad-free unlocked!</p>
+          <p className="text-xs" style={{color:'var(--text-muted)'}}>
+            Thank you for supporting Marine ROB! 🚢
+          </p>
         </div>
       )}
+
+      {/* Contact */}
       <div className="th-card border rounded-2xl p-4 space-y-2">
         <h3 className="font-semibold text-sm flex items-center gap-2" style={{color:'var(--text-primary)'}}><Mail size={15}/> {T('contactUs')}</h3>
-        <a href="mailto:nordaneastow@gmail.com" className="block text-sky-400 hover:text-sky-300 text-sm font-medium transition-colors">nordaneastow@gmail.com</a>
+        <a href="mailto:nordaneastow@gmail.com" className="block text-sky-400 hover:text-sky-300 text-sm font-medium transition-colors">
+          nordaneastow@gmail.com
+        </a>
         <p className="text-xs" style={{color:'var(--text-muted)'}}>Questions, feedback, feature requests — all welcome.</p>
       </div>
+
+      {/* About */}
       <div className="th-card border rounded-2xl p-4 space-y-1">
         <h3 className="font-semibold text-sm flex items-center gap-2" style={{color:'var(--text-primary)'}}><Info size={15}/> About</h3>
         <p className="text-xs" style={{color:'var(--text-muted)'}}>{T('dataInfo')}</p>
         <p className="text-xs" style={{color:'var(--text-muted)'}}>{T('version')}</p>
       </div>
+
     </div>
   );
 }

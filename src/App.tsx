@@ -1,6 +1,6 @@
 ﻿import { useState, useEffect } from 'react';
 import { BarChart3, Layers, BookOpen, Users, Settings } from 'lucide-react';
-import type { FuelCategory } from './types';
+import type { FuelCategory, SFOCEntry } from './types';
 import { FUEL_LABELS, FUEL_COLORS } from './types';
 import { useStore } from './hooks/useStore';
 import { loadTheme, saveTheme, resolveTheme, applyTheme } from './theme';
@@ -35,6 +35,24 @@ function App() {
   const [avgConsumption, setAvgConsumption] = useState<number>(
     () => parseFloat(localStorage.getItem('mrob_avg_consumption')||'0')||0
   );
+  const [sfocEntries, setSfocEntries] = useState<SFOCEntry[]>(() => {
+  try {
+    const saved = localStorage.getItem('mrob_sfoc_entries');
+    return saved ? JSON.parse(saved) : [];
+  } catch { return []; }
+});
+
+const handleSaveSFOC = (entry: SFOCEntry) => {
+  const next = [entry, ...sfocEntries];
+  setSfocEntries(next);
+  localStorage.setItem('mrob_sfoc_entries', JSON.stringify(next));
+};
+
+const handleDeleteSFOC = (id: string) => {
+  const next = sfocEntries.filter(e => e.id !== id);
+  setSfocEntries(next);
+  localStorage.setItem('mrob_sfoc_entries', JSON.stringify(next));
+};
 
   useEffect(() => {
     applyTheme(resolveTheme(theme));
@@ -114,7 +132,7 @@ function App() {
       )}
 
       <main className={`flex-1 overflow-y-auto ${bottomPad}`}>
-        {screen==='overview' && <SummaryTab robByCategory={store.robByCategory} avgConsumption={avgConsumption} onAvgConsumptionChange={handleAvgChange} locale={locale} />}
+       {screen==='overview' && <SummaryTab robByCategory={store.robByCategory} avgConsumption={avgConsumption} onAvgConsumptionChange={handleAvgChange} locale={locale} sfocEntries={sfocEntries} onSaveSFOC={handleSaveSFOC} onDeleteSFOC={handleDeleteSFOC} />}
         {screen==='tanks' && <FuelTab category={tanksCat} tanks={store.tanks.filter(t=>t.category===tanksCat)} rob={store.robByCategory(tanksCat)} onAdd={store.addTank} onUpdate={store.updateTank} onDelete={store.deleteTank} locale={locale} />}
         {screen==='log' && logTab==='consumption' && <ConsumptionTab log={store.consumptionLog} onAdd={store.addConsumption} onDelete={store.delConsumption} onEdit={store.editConsumption} />}
         {screen==='log' && logTab==='bunker' && <BunkerTab log={store.bunkerLog} onAdd={store.addBunker} onDelete={store.delBunker} onEdit={store.editBunker} />}

@@ -12,6 +12,9 @@ interface Props {
   avgConsumption: number;
   onAvgConsumptionChange: (v: number) => void;
   locale: Locale;
+  sfocEntries: SFOCEntry[];
+  onSaveSFOC: (entry: SFOCEntry) => void;
+  onDeleteSFOC: (id: string) => void;
 }
 
 const FUEL_CATS: FuelCategory[] = ['HFO', 'VLSFO', 'MDO'];
@@ -19,10 +22,9 @@ const FUEL_HEX: Record<FuelCategory, string> = {
   HFO:'#ea580c', VLSFO:'#d97706', MDO:'#0d9488', LUBE:'#16a34a', SLUDGE:'#57534e',
 };
 
-export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsumptionChange, locale }: Props) {
+export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsumptionChange, locale, sfocEntries, onSaveSFOC, onDeleteSFOC }: Props) {
   const T = (k: TKey) => t(locale, k);
   const [localAvg, setLocalAvg] = useState<string>(avgConsumption>0 ? String(avgConsumption) : '');
-  const [sfocEntries, setSfocEntries] = useState<SFOCEntry[]>([]);
   const robs = FUEL_CATS.map(c => ({ cat: c, rob: robByCategory(c) }));
   const maxROB = Math.max(...robs.map(r=>r.rob), 1);
   const totalROB = robs.reduce((s,r)=>s+r.rob, 0);
@@ -71,8 +73,7 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
               value={localAvg}
               onChange={e => {
                 setLocalAvg(e.target.value);
-                const v = parseFloat(e.target.value)||0;
-                onAvgConsumptionChange(v);
+                onAvgConsumptionChange(parseFloat(e.target.value)||0);
               }}
             />
           </div>
@@ -86,9 +87,9 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
       </div>
 
       <SFOCCalculator
-        onSaveEntry={(entry) => setSfocEntries(prev => [entry, ...prev])}
+        onSaveEntry={onSaveSFOC}
         entries={sfocEntries}
-        onDeleteEntry={(id) => setSfocEntries(prev => prev.filter(e => e.id !== id))}
+        onDeleteEntry={onDeleteSFOC}
       />
 
       <div className="th-card border rounded-2xl p-4">
