@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Calculator, TrendingDown, Trash2 } from 'lucide-react';
 
 interface SFOCEntry {
@@ -20,10 +20,8 @@ interface Props {
 }
 
 function calculateSFOCConsumption(meLoad: number, aeLoad: number, sfoc: number, hours: number): {me: number, total: number} {
-  const meMCR = 5000;
-  const aeMCR = 500;
-  const mePower = (meMCR * meLoad) / 100;
-  const aePower = (aeMCR * aeLoad) / 100;
+  const mePower = (5000 * meLoad) / 100;
+  const aePower = (500 * aeLoad) / 100;
   const meConsumption = (sfoc * mePower * hours) / 1_000_000;
   const aeConsumption = (sfoc * aePower * hours) / 1_000_000;
   return { me: meConsumption, total: meConsumption + aeConsumption };
@@ -39,16 +37,12 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
   const { me: meConsumption, total: totalConsumption } = calculateSFOCConsumption(meLoad, aeLoad, sfoc, hours);
 
   const handleSave = () => {
-    const entry: SFOCEntry = {
+    onSaveEntry({
       id: Math.random().toString(36).slice(2) + Date.now().toString(36),
       date: new Date().toISOString().slice(0, 10),
       meLoad, aeLoad, speed, hours, sfoc, meConsumption, totalConsumption,
-    };
-    onSaveEntry(entry);
-    setMeLoad(75);
-    setAeLoad(30);
-    setSpeed(12);
-    setHours(24);
+    });
+    setMeLoad(75); setAeLoad(30); setSpeed(12); setHours(24);
   };
 
   const fmt = (n: number) => n.toFixed(2);
@@ -60,35 +54,34 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
           <Calculator size={16}/> Daily Consumption (SFOC)
         </h3>
       </div>
-      
       <div className="p-4 space-y-4">
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>SFOC (g/kWh)</label>
             <input type="number" step="1" min="140" max="250" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border focus:border-sky-500 focus:outline-none" value={sfoc} onChange={e => setSfoc(parseFloat(e.target.value) || 190)} />
+            <p className="text-xs mt-1" style={{color:'var(--text-muted)'}}>Typical: 190</p>
           </div>
           <div>
             <label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Hours/Day</label>
             <input type="number" step="0.5" min="0" max="24" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border focus:border-sky-500 focus:outline-none" value={hours} onChange={e => setHours(parseFloat(e.target.value) || 24)} />
           </div>
         </div>
-
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="text-xs" style={{color:'var(--text-muted)'}}>Main Engine (ME) Load</label>
             <span className="text-sm font-bold" style={{color:'var(--text-primary)'}}>{meLoad}%</span>
           </div>
           <input type="range" min="0" max="100" step="5" className="w-full" value={meLoad} onChange={e => setMeLoad(parseFloat(e.target.value))} />
+          <p className="text-xs mt-1" style={{color:'var(--text-muted)'}}>MCR: 5000 kW</p>
         </div>
-
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="text-xs" style={{color:'var(--text-muted)'}}>Auxiliary Engine (AE) Load</label>
             <span className="text-sm font-bold" style={{color:'var(--text-primary)'}}>{aeLoad}%</span>
           </div>
           <input type="range" min="0" max="100" step="5" className="w-full" value={aeLoad} onChange={e => setAeLoad(parseFloat(e.target.value))} />
+          <p className="text-xs mt-1" style={{color:'var(--text-muted)'}}>MCR: 500 kW</p>
         </div>
-
         <div>
           <div className="flex justify-between items-center mb-2">
             <label className="text-xs" style={{color:'var(--text-muted)'}}>Ship Speed</label>
@@ -96,7 +89,6 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
           </div>
           <input type="range" min="6" max="18" step="0.5" className="w-full" value={speed} onChange={e => setSpeed(parseFloat(e.target.value))} />
         </div>
-
         <div className="grid grid-cols-2 gap-3 pt-2" style={{borderTop:'1px solid var(--border)'}}>
           <div className="rounded-xl p-3 text-center" style={{background:'var(--bg-input)'}}>
             <p className="text-xs" style={{color:'var(--text-muted)'}}>ME Consumption</p>
@@ -109,12 +101,10 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
             <p className="text-xs" style={{color:'var(--text-muted)'}}>MT/day</p>
           </div>
         </div>
-
         <button onClick={handleSave} className="w-full bg-sky-600 hover:bg-sky-500 text-white rounded-xl py-3 font-semibold text-sm transition-colors">
           Save Entry
         </button>
       </div>
-
       {entries.length > 0 && (
         <div className="p-4 border-t" style={{borderColor:'var(--border)'}}>
           <h4 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{color:'var(--text-secondary)'}}>
@@ -124,9 +114,7 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
             {entries.slice(0, 8).map(e => (
               <div key={e.id} className="th-card border rounded-lg p-2.5 flex items-center justify-between text-xs" style={{background:'var(--bg-input)'}}>
                 <div>
-                  <p className="font-semibold" style={{color:'var(--text-primary)'}}>
-                    ME {e.meLoad}% вЂў AE {e.aeLoad}% вЂў {e.speed.toFixed(1)}kt вЂў {e.hours}h
-                  </p>
+                  <p className="font-semibold" style={{color:'var(--text-primary)'}}>ME {e.meLoad}% • AE {e.aeLoad}% • {e.speed.toFixed(1)}kt • {e.hours}h</p>
                   <p style={{color:'var(--text-muted)'}}>{e.date}</p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -146,6 +134,3 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
     </div>
   );
 }
-
-
-

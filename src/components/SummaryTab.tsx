@@ -1,6 +1,6 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { Share2 } from 'lucide-react';
-import type { FuelCategory } from '../types';
+import type { FuelCategory, SFOCEntry } from '../types';
 import { FUEL_LABELS } from '../types';
 import type { Locale, TKey } from '../i18n';
 import { t } from '../i18n';
@@ -22,6 +22,7 @@ const FUEL_HEX: Record<FuelCategory, string> = {
 export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsumptionChange, locale }: Props) {
   const T = (k: TKey) => t(locale, k);
   const [localAvg, setLocalAvg] = useState<string>(avgConsumption>0 ? String(avgConsumption) : '');
+  const [sfocEntries, setSfocEntries] = useState<SFOCEntry[]>([]);
   const robs = FUEL_CATS.map(c => ({ cat: c, rob: robByCategory(c) }));
   const maxROB = Math.max(...robs.map(r=>r.rob), 1);
   const totalROB = robs.reduce((s,r)=>s+r.rob, 0);
@@ -29,10 +30,10 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
   const enduranceDays = avg>0 ? Math.floor(totalROB/avg) : null;
 
   const shareApp = async () => {
-    const text = 'Marine ROB Calculator';
+    const text = 'Marine ROB Calculator — fuel & oil tracker for seafarers';
     const url = window.location.href;
     if (navigator.share) { try { await navigator.share({ title:'Marine ROB', text, url }); } catch {} }
-    else { await navigator.clipboard.writeText(url); alert('Link copied!'); }
+    else { await navigator.clipboard.writeText(url); alert('App link copied!'); }
   };
 
   return (
@@ -47,10 +48,15 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
                 <span className="font-bold" style={{color:'var(--text-primary)'}}>{fmtMT(rob)}</span>
               </div>
               <div className="h-2.5 rounded-full overflow-hidden" style={{backgroundColor:'var(--border)'}}>
-                <div className="h-full rounded-full transition-all duration-700" style={{width:`${(rob/maxROB)*100}%`,backgroundColor:FUEL_HEX[cat]}} />
+                <div className="h-full rounded-full transition-all duration-700"
+                  style={{width:`${(rob/maxROB)*100}%`,backgroundColor:FUEL_HEX[cat]}} />
               </div>
             </div>
           ))}
+        </div>
+        <div className="mt-4 pt-4 flex justify-between" style={{borderTop:'1px solid var(--border)'}}>
+          <span className="text-sm" style={{color:'var(--text-secondary)'}}>{T('totalROB')}</span>
+          <span className="font-bold text-lg" style={{color:'var(--text-primary)'}}>{fmtMT(totalROB)}</span>
         </div>
       </div>
 
@@ -59,16 +65,31 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>{T('avgConsumption')}</label>
-            <input type="number" placeholder="45" step="0.1" min="0" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border focus:border-sky-500 focus:outline-none" value={localAvg} onChange={e => {setLocalAvg(e.target.value); const v = parseFloat(e.target.value)||0; onAvgConsumptionChange(v);}} />
+            <input
+              type="number" placeholder="45" step="0.1" min="0"
+              className="th-input w-full rounded-xl px-3 py-2.5 text-sm border focus:border-sky-500 focus:outline-none"
+              value={localAvg}
+              onChange={e => {
+                setLocalAvg(e.target.value);
+                const v = parseFloat(e.target.value)||0;
+                onAvgConsumptionChange(v);
+              }}
+            />
           </div>
           <div className="text-center min-w-[64px]">
-            <p className="text-3xl font-bold" style={{color:enduranceDays!==null?'#22c55e':'var(--text-muted)'}}>{enduranceDays!==null ? enduranceDays : 'вЂ”'}</p>
+            <p className="text-3xl font-bold" style={{color:enduranceDays!==null?'#22c55e':'var(--text-muted)'}}>
+              {enduranceDays!==null ? enduranceDays : '—'}
+            </p>
             <p className="text-xs" style={{color:'var(--text-muted)'}}>{T('enduranceDays')}</p>
           </div>
         </div>
       </div>
 
-      <SFOCCalculator onSaveEntry={() => {}} entries={[]} onDeleteEntry={() => {}} />
+      <SFOCCalculator
+        onSaveEntry={(entry) => setSfocEntries(prev => [entry, ...prev])}
+        entries={sfocEntries}
+        onDeleteEntry={(id) => setSfocEntries(prev => prev.filter(e => e.id !== id))}
+      />
 
       <div className="th-card border rounded-2xl p-4">
         <button onClick={shareApp} className="w-full flex items-center justify-center gap-2 bg-sky-600 hover:bg-sky-500 text-white rounded-xl py-3 text-sm font-medium transition-colors">
@@ -78,6 +99,3 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
     </div>
   );
 }
-
-
-

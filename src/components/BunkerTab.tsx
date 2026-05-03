@@ -1,91 +1,122 @@
-﻿import { useState } from 'react';
-import { Plus, Trash2 } from 'lucide-react';
-import type { BunkerEntry, FuelCategory } from '../types';
+import { useState } from 'react';
+import { Package, ChevronDown, Anchor, Trash2, Pencil, Check, X } from 'lucide-react';
+import type { FuelCategory, BunkerEntry } from '../types';
 import { FUEL_LABELS, DEFAULT_DENSITY } from '../types';
+import { today, fmt } from '../utils';
 
-const CATS: FuelCategory[] = ['HFO', 'VLSFO', 'MDO', 'LUBE', 'SLUDGE'];
-
-export default function BunkerTab({ entries, onAdd, onDelete }: {
-  entries: BunkerEntry[];
-  onAdd: (e: Omit<BunkerEntry, 'id'>) => void;
+interface Props {
+  log: BunkerEntry[];
+  onAdd: (e: Omit<BunkerEntry,'id'>) => void;
   onDelete: (id: string) => void;
-}) {
-  const [show, setShow] = useState(false);
+  onEdit: (e: BunkerEntry) => void;
+}
+
+const CATS: FuelCategory[] = ['HFO', 'VLSFO', 'MDO', 'LUBE'];
+
+function EditRow({ entry, onSave, onCancel }: { entry: BunkerEntry; onSave: (e: BunkerEntry) => void; onCancel: () => void }) {
+  const [port, setPort] = useState(entry.port);
+  const [qty, setQty] = useState(String(entry.quantityT));
+  const [den, setDen] = useState(String(entry.density));
+  const [note, setNote] = useState(entry.note);
+  return (
+    <div className="th-card border rounded-xl p-3 space-y-2">
+      <div className="grid grid-cols-2 gap-2">
+        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Port</label>
+          <input className="th-input w-full rounded-lg px-2 py-1.5 text-sm border" value={port} onChange={e=>setPort(e.target.value)} /></div>
+        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Qty (MT)</label>
+          <input type="number" className="th-input w-full rounded-lg px-2 py-1.5 text-sm border" value={qty} onChange={e=>setQty(e.target.value)} /></div>
+        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Density</label>
+          <input type="number" step="0.001" className="th-input w-full rounded-lg px-2 py-1.5 text-sm border" value={den} onChange={e=>setDen(e.target.value)} /></div>
+        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Note</label>
+          <input className="th-input w-full rounded-lg px-2 py-1.5 text-sm border" value={note} onChange={e=>setNote(e.target.value)} /></div>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={()=>onSave({...entry,port,quantityT:parseFloat(qty),density:parseFloat(den),note})} className="flex-1 flex items-center justify-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg py-1.5 text-xs"><Check size={12}/> Save</button>
+        <button onClick={onCancel} className="flex-1 flex items-center justify-center gap-1 bg-slate-600 hover:bg-slate-500 text-white rounded-lg py-1.5 text-xs"><X size={12}/> Cancel</button>
+      </div>
+    </div>
+  );
+}
+
+export default function BunkerTab({ log, onAdd, onDelete, onEdit }: Props) {
   const [cat, setCat] = useState<FuelCategory>('HFO');
-  const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [date, setDate] = useState(today());
   const [port, setPort] = useState('');
   const [qty, setQty] = useState('');
-  const [den, setDen] = useState('');
+  const [den, setDen] = useState(String(DEFAULT_DENSITY['HFO']));
   const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [editingId, setEditingId] = useState<string|null>(null);
 
   const submit = () => {
-    if (!qty) return;
-    onAdd({ category: cat, date, port, quantityT: parseFloat(qty), density: parseFloat(den) || DEFAULT_DENSITY[cat], note });
-    setQty(''); setPort(''); setNote(''); setShow(false);
+    if (!qty||!port) return;
+    setSaving(true);
+    onAdd({date,category:cat,port,quantityT:parseFloat(qty),density:parseFloat(den)||DEFAULT_DENSITY[cat],note});
+    setQty(''); setPort(''); setNote('');
+    setSaved(true); setTimeout(()=>setSaved(false),3000); setSaving(false);
   };
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="font-semibold" style={{ color: 'var(--text-primary)' }}>Bunker Log</h2>
-        <button onClick={() => setShow(!show)} className="flex items-center gap-1.5 bg-sky-600 text-white rounded-xl px-4 py-2 text-sm font-medium">
-          <Plus size={15} /> Add Entry
-        </button>
+      <div className="th-card border rounded-2xl overflow-hidden">
+        <div className="p-4 border-b" style={{borderColor:'var(--border)'}}>
+          <h3 className="font-semibold flex items-center gap-2" style={{color:'var(--text-primary)'}}><Anchor size={16}/> Bunker Log Entry</h3>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Date</label>
+              <input type="date" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border" value={date} onChange={e=>setDate(e.target.value)} /></div>
+            <div><label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Fuel Type</label>
+              <div className="relative">
+                <select className="th-input w-full appearance-none rounded-xl px-3 py-2.5 text-sm border" value={cat} onChange={e=>{setCat(e.target.value as FuelCategory);setDen(String(DEFAULT_DENSITY[e.target.value as FuelCategory]))}}>
+                  {CATS.map(c=><option key={c} value={c}>{FUEL_LABELS[c]}</option>)}
+                </select>
+                <ChevronDown size={14} className="absolute right-3 top-3 pointer-events-none" style={{color:'var(--text-muted)'}} />
+              </div>
+            </div>
+          </div>
+          <div><label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Port</label>
+            <input placeholder="e.g. Rotterdam" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border" value={port} onChange={e=>setPort(e.target.value)} /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Quantity (MT)</label>
+              <input type="number" placeholder="0.00" step="0.01" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border" value={qty} onChange={e=>setQty(e.target.value)} /></div>
+            <div><label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Density (t/m³)</label>
+              <input type="number" step="0.001" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border" value={den} onChange={e=>setDen(e.target.value)} /></div>
+          </div>
+          <div><label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>Note (optional)</label>
+            <input placeholder="BDN no., remarks…" className="th-input w-full rounded-xl px-3 py-2.5 text-sm border" value={note} onChange={e=>setNote(e.target.value)} /></div>
+          <button onClick={submit} disabled={!qty||!port||saving} className="w-full bg-sky-600 hover:bg-sky-500 disabled:opacity-40 text-white rounded-xl py-3 font-semibold transition-colors text-sm">
+            {saving?'Saving…':'Log Bunker'}
+          </button>
+          {saved&&<p className="text-center text-xs text-emerald-400">✓ Bunker entry saved</p>}
+        </div>
       </div>
-
-      {show && (
-        <div className="th-card border rounded-2xl p-4 space-y-3" style={{ borderColor: 'var(--border)' }}>
-          <div className="grid grid-cols-3 gap-2">
-            {CATS.map(c => (
-              <button key={c} onClick={() => setCat(c)}
-                className="py-2 rounded-xl text-xs font-medium border"
-                style={{ background: cat === c ? '#0ea5e9' : 'var(--bg-input)', color: cat === c ? '#fff' : 'var(--text-muted)', borderColor: 'var(--border)' }}>
-                {FUEL_LABELS[c]}
-              </button>
+      {log.length>0 && (
+        <div>
+          <h3 className="text-sm font-semibold uppercase tracking-wide mb-3 flex items-center gap-2" style={{color:'var(--text-secondary)'}}><Package size={14}/> Bunker History</h3>
+          <div className="space-y-2">
+            {log.slice(0,30).map(e => editingId===e.id ? (
+              <EditRow key={e.id} entry={e} onSave={u=>{onEdit(u);setEditingId(null);}} onCancel={()=>setEditingId(null)} />
+            ) : (
+              <div key={e.id} className="th-card border rounded-xl p-3">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="text-sm font-semibold" style={{color:'var(--text-primary)'}}>{FUEL_LABELS[e.category]} — {e.port}</p>
+                    <p className="text-xs" style={{color:'var(--text-muted)'}}>{e.date}{e.note?` · ${e.note}`:''}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="text-right mr-1">
+                      <p className="text-sm font-bold text-sky-400">{fmt(e.quantityT,2)} MT</p>
+                      <p className="text-xs" style={{color:'var(--text-muted)'}}>ρ {fmt(e.density,3)}</p>
+                    </div>
+                    <button onClick={()=>setEditingId(e.id)} className="p-1.5 rounded-lg hover:bg-sky-600 transition-colors" style={{color:'var(--text-muted)'}}><Pencil size={13}/></button>
+                    <button onClick={()=>onDelete(e.id)} className="p-1.5 rounded-lg hover:bg-red-700 transition-colors" style={{color:'var(--text-muted)'}}><Trash2 size={13}/></button>
+                  </div>
+                </div>
+              </div>
             ))}
           </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Date</label>
-              <input type="date" className="th-input w-full rounded-xl px-3 py-2 text-sm border mt-1" value={date} onChange={e => setDate(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Port</label>
-              <input className="th-input w-full rounded-xl px-3 py-2 text-sm border mt-1" placeholder="Rotterdam" value={port} onChange={e => setPort(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Quantity (MT)</label>
-              <input type="number" className="th-input w-full rounded-xl px-3 py-2 text-sm border mt-1" placeholder="500" value={qty} onChange={e => setQty(e.target.value)} />
-            </div>
-            <div>
-              <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Density (t/m³)</label>
-              <input type="number" step="0.001" className="th-input w-full rounded-xl px-3 py-2 text-sm border mt-1" placeholder={String(DEFAULT_DENSITY[cat])} value={den} onChange={e => setDen(e.target.value)} />
-            </div>
-            <div className="col-span-2">
-              <label className="text-xs" style={{ color: 'var(--text-muted)' }}>Note</label>
-              <input className="th-input w-full rounded-xl px-3 py-2 text-sm border mt-1" placeholder="Optional" value={note} onChange={e => setNote(e.target.value)} />
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button onClick={submit} className="flex-1 bg-sky-600 text-white rounded-xl py-2.5 text-sm font-semibold">Save</button>
-            <button onClick={() => setShow(false)} className="px-4 rounded-xl text-sm" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)' }}>Cancel</button>
-          </div>
-        </div>
-      )}
-
-      {entries.length === 0 ? (
-        <p className="text-center py-10 text-sm" style={{ color: 'var(--text-muted)' }}>No bunker entries yet</p>
-      ) : (
-        <div className="space-y-2">
-          {entries.map(e => (
-            <div key={e.id} className="th-card border rounded-xl px-4 py-3 flex justify-between items-center" style={{ borderColor: 'var(--border)' }}>
-              <div>
-                <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{FUEL_LABELS[e.category]} — {e.quantityT} MT</p>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>{e.date}{e.port ? ` · ${e.port}` : ''}{e.note ? ` · ${e.note}` : ''}</p>
-              </div>
-              <button onClick={() => onDelete(e.id)} className="text-red-400"><Trash2 size={14} /></button>
-            </div>
-          ))}
         </div>
       )}
     </div>

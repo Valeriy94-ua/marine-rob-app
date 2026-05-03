@@ -1,5 +1,13 @@
 export type Locale = 'en' | 'tl' | 'ru' | 'uk' | 'hi';
 
+export const LOCALE_LABELS: Record<Locale, string> = {
+  en: 'English',
+  tl: 'Filipino',
+  ru: 'Русский',
+  uk: 'Українська',
+  hi: 'हिंदी',
+};
+
 const translations = {
   en: {
     appName: 'Marine ROB',
