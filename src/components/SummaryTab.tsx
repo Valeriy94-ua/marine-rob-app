@@ -18,13 +18,19 @@ interface Props {
 }
 
 const FUEL_CATS: FuelCategory[] = ['HFO', 'VLSFO', 'MDO'];
-const FUEL_HEX: Record<FuelCategory, string> = {
-  HFO:'#ea580c', VLSFO:'#d97706', MDO:'#0d9488', LUBE:'#16a34a', SLUDGE:'#57534e',
+
+const FUEL_HEX: Record<string, string> = {
+  HFO: '#991b1b',
+  VLSFO: '#713f12',
+  MDO: '#dc2626',
+  LUBE: '#ca8a04',
+  SLUDGE: '#64748b',
 };
 
 export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsumptionChange, locale, sfocEntries, onSaveSFOC, onDeleteSFOC }: Props) {
   const T = (k: TKey) => t(locale, k);
   const [localAvg, setLocalAvg] = useState<string>(avgConsumption>0 ? String(avgConsumption) : '');
+
   const robs = FUEL_CATS.map(c => ({ cat: c, rob: robByCategory(c) }));
   const maxROB = Math.max(...robs.map(r=>r.rob), 1);
   const totalROB = robs.reduce((s,r)=>s+r.rob, 0);
