@@ -17,7 +17,7 @@ interface Props {
   onDeleteSFOC: (id: string) => void;
 }
 
-const FUEL_CATS: FuelCategory[] = ['HFO', 'VLSFO', 'MDO'];
+const FUEL_CATS: FuelCategory[] = ['HFO', 'VLSFO', 'MDO', 'CUSTOM'];
 
 const FUEL_HEX: Record<string, string> = {
   HFO: '#991b1b',
@@ -25,17 +25,20 @@ const FUEL_HEX: Record<string, string> = {
   MDO: '#dc2626',
   LUBE: '#ca8a04',
   SLUDGE: '#64748b',
+  CUSTOM: '#7c3aed',
 };
 
 export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsumptionChange, locale, sfocEntries, onSaveSFOC, onDeleteSFOC }: Props) {
   const T = (k: TKey) => t(locale, k);
   const [localAvg, setLocalAvg] = useState<string>(avgConsumption>0 ? String(avgConsumption) : '');
+  const [enduranceCat, setEnduranceCat] = useState<FuelCategory>('HFO');
 
   const robs = FUEL_CATS.map(c => ({ cat: c, rob: robByCategory(c) }));
   const maxROB = Math.max(...robs.map(r=>r.rob), 1);
   const totalROB = robs.reduce((s,r)=>s+r.rob, 0);
   const avg = parseFloat(localAvg)||0;
-  const enduranceDays = avg>0 ? Math.floor(totalROB/avg) : null;
+  const selectedROB = robByCategory(enduranceCat);
+  const enduranceDays = avg>0 ? Math.floor(selectedROB/avg) : null;
 
   const shareApp = async () => {
     const text = 'Marine ROB Calculator — fuel & oil tracker for seafarers';
@@ -46,6 +49,8 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
 
   return (
     <div className="p-4 space-y-4">
+
+      {/* ROB bars */}
       <div className="th-card border rounded-2xl p-4">
         <h3 className="font-semibold mb-4" style={{color:'var(--text-primary)'}}>{T('totalROB')}</h3>
         <div className="space-y-3">
@@ -68,8 +73,28 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
         </div>
       </div>
 
+      {/* Fuel endurance */}
       <div className="th-card border rounded-2xl p-4">
         <h3 className="font-semibold mb-3 text-sm" style={{color:'var(--text-primary)'}}>{T('fuelEndurance')}</h3>
+
+        {/* Fuel type selector */}
+        <div className="flex gap-2 mb-3">
+          {FUEL_CATS.map(cat => (
+            <button
+              key={cat}
+              onClick={() => setEnduranceCat(cat)}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium transition-all border"
+              style={{
+                backgroundColor: enduranceCat === cat ? FUEL_HEX[cat] : 'transparent',
+                color: enduranceCat === cat ? 'white' : 'var(--text-muted)',
+                borderColor: enduranceCat === cat ? FUEL_HEX[cat] : 'var(--border)',
+              }}
+            >
+              {FUEL_LABELS[cat]}
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-4">
           <div className="flex-1">
             <label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>{T('avgConsumption')}</label>
@@ -90,6 +115,14 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
             <p className="text-xs" style={{color:'var(--text-muted)'}}>{T('enduranceDays')}</p>
           </div>
         </div>
+
+        {/* ROB for selected fuel */}
+        <div className="mt-2 text-xs" style={{color:'var(--text-muted)'}}>
+          {FUEL_LABELS[enduranceCat]} ROB:&nbsp;
+          <span className="font-semibold" style={{color: FUEL_HEX[enduranceCat]}}>
+            {fmtMT(selectedROB)}
+          </span>
+        </div>
       </div>
 
       <SFOCCalculator
@@ -103,6 +136,7 @@ export default function SummaryTab({ robByCategory, avgConsumption, onAvgConsump
           <Share2 size={16}/> {T('shareApp')}
         </button>
       </div>
+
     </div>
   );
 }

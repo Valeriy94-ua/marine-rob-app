@@ -1,9 +1,10 @@
-﻿export type FuelCategory = 'HFO' | 'VLSFO' | 'MDO' | 'LUBE' | 'SLUDGE';
+﻿export type FuelCategory = 'HFO' | 'VLSFO' | 'MDO' | 'LUBE' | 'SLUDGE'| 'CUSTOM';
 
 export interface Tank {
   id: string;
   name: string;
   category: FuelCategory;
+  customLabel?: string; 
   volumeM3: number;
   density: number;
   massT: number;
@@ -61,15 +62,8 @@ export const FUEL_LABELS: Record<FuelCategory, string> = {
   MDO: 'MDO',
   LUBE: 'Lube Oils',
   SLUDGE: 'Sludge',
+  CUSTOM: 'Custom',
 };
-
-// export const FUEL_COLORS: Record<FuelCategory, string> = {
-//   HFO: 'bg-orange-600',
-//   VLSFO: 'bg-amber-500',
-//   MDO: 'bg-teal-600',
-//   LUBE: 'bg-emerald-600',
-//   SLUDGE: 'bg-stone-600',
-// };
 
 export const FUEL_COLORS: Record<FuelCategory, string> = {
   HFO: 'bg-red-800',        // тёмно-красный
@@ -77,21 +71,16 @@ export const FUEL_COLORS: Record<FuelCategory, string> = {
   MDO: 'bg-red-600',        // яркий красный
   LUBE: 'bg-yellow-500',    // жёлтый
   SLUDGE: 'bg-slate-500',   // серый
+  CUSTOM: 'bg-violet-600',
 };
 
-// export const FUEL_BORDER: Record<FuelCategory, string> = {
-//   HFO: 'border-orange-500',
-//   VLSFO: 'border-amber-400',
-//   MDO: 'border-teal-500',
-//   LUBE: 'border-emerald-500',
-//   SLUDGE: 'border-stone-500',
-// };
 export const FUEL_BORDER: Record<FuelCategory, string> = {
   HFO: 'border-red-800',
   VLSFO: 'border-yellow-900',
   MDO: 'border-red-500',
   LUBE: 'border-yellow-400',
   SLUDGE: 'border-slate-400',
+  CUSTOM: 'border-violet-500',
 };
 
 export const DEFAULT_DENSITY: Record<FuelCategory, number> = {
@@ -100,6 +89,7 @@ export const DEFAULT_DENSITY: Record<FuelCategory, number> = {
   MDO: 0.875,
   LUBE: 0.900,
   SLUDGE: 1.000,
+  CUSTOM: 0.900,
 };
 
 

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { Plus, Fuel, Droplets } from 'lucide-react';
 import type { FuelCategory, Tank } from '../types';
 import { FUEL_LABELS, FUEL_COLORS } from '../types';
@@ -24,7 +24,11 @@ export default function FuelTab({ category, tanks, rob, onAdd, onUpdate, onDelet
   const colorClass = FUEL_COLORS[category];
   const isSludge = category === 'SLUDGE';
   const isLube = category === 'LUBE';
-  const headerLabel = isSludge ? 'Total Sludge ROB' : isLube ? 'Total Lube Oil ROB' : `Total ROB — ${FUEL_LABELS[category]}`;
+  const isCustom = category === 'CUSTOM';
+  const headerLabel = isSludge ? 'Total Sludge ROB' 
+  : isLube ? 'Total Lube Oil ROB'
+  : isCustom ? 'Total Custom Fuel ROB'
+  : `Total ROB — ${FUEL_LABELS[category]}`;
 
   return (
     <div className="p-4 space-y-4">
@@ -41,7 +45,7 @@ export default function FuelTab({ category, tanks, rob, onAdd, onUpdate, onDelet
 
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-secondary)' }}>
-          {isSludge ? 'Sludge Tanks' : isLube ? 'Lube Oil Tanks' : 'Fuel Tanks'}
+          {isSludge ? 'Sludge Tanks' : isLube ? 'Lube Oil Tanks' : isCustom ? 'Custom Fuel Tanks' : 'Fuel Tanks'}
         </h3>
         <button onClick={() => setShowModal(true)} className="flex items-center gap-1.5 bg-sky-600 hover:bg-sky-500 text-white rounded-xl px-4 py-2 text-sm font-medium transition-colors">
           <Plus size={16}/> {T('addTank')}

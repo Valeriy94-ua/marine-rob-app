@@ -54,7 +54,9 @@ export default function TankCard({ tank, onUpdate, onDelete }: Props) {
       <div className="flex items-start justify-between">
         <div>
           <p className="font-semibold text-white text-sm">{tank.name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{fmt(tank.volumeM3)} m³ × {fmt(tank.density)} t/m³</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {tank.customLabel ? `${tank.customLabel} · ` : ''}{fmt(tank.volumeM3)} m³ × {fmt(tank.density)} t/m³
+          </p>
         </div>
         <div className="text-right">
           <p className="font-bold text-emerald-400 text-lg">{fmtMT(tank.massT)}</p>

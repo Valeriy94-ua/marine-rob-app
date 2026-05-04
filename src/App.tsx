@@ -21,7 +21,7 @@ type TanksCat = FuelCategory;
 type LogTab = 'consumption' | 'bunker';
 type CrewTab = 'contract' | 'salary';
 
-const TANK_CATS: FuelCategory[] = ['HFO','VLSFO','MDO','LUBE','SLUDGE'];
+const TANK_CATS: FuelCategory[] = ['HFO','VLSFO','MDO','LUBE','SLUDGE', 'CUSTOM'];
 
 function App() {
   const store = useStore();
