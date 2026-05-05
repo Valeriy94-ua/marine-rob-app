@@ -15,6 +15,7 @@ import ContractTab from './components/ContractTab';
 import SalaryTab from './components/SalaryTab';
 import SettingsScreen from './components/SettingsScreen';
 import AdBanner from './components/AdBanner';
+import RewardedAd from './components/RewardedAd';
 
 type Screen = 'overview' | 'tanks' | 'log' | 'crew' | 'settings';
 type TanksCat = FuelCategory;
@@ -32,6 +33,9 @@ function App() {
   const [logTab, setLogTab] = useState<LogTab>('consumption');
   const [crewTab, setCrewTab] = useState<CrewTab>('contract');
   const [showAdPrompt, setShowAdPrompt] = useState(false);
+  const [tanksUnlocked, setTanksUnlocked] = useState(false);
+  const [showTanksAdPrompt, setShowTanksAdPrompt] = useState(false);
+  const FREE_TANKS = 5;
   const [avgConsumption, setAvgConsumption] = useState<number>(
     () => parseFloat(localStorage.getItem('mrob_avg_consumption')||'0')||0
   );
@@ -132,8 +136,52 @@ const handleDeleteSFOC = (id: string) => {
       )}
 
       <main className={`flex-1 overflow-y-auto ${bottomPad}`}>
-       {screen==='overview' && <SummaryTab robByCategory={store.robByCategory} avgConsumption={avgConsumption} onAvgConsumptionChange={handleAvgChange} locale={locale} sfocEntries={sfocEntries} onSaveSFOC={handleSaveSFOC} onDeleteSFOC={handleDeleteSFOC} />}
-        {screen==='tanks' && <FuelTab category={tanksCat} tanks={store.tanks.filter(t=>t.category===tanksCat)} rob={store.robByCategory(tanksCat)} onAdd={store.addTank} onUpdate={store.updateTank} onDelete={store.deleteTank} locale={locale} />}
+          {screen==='overview' && <SummaryTab
+          robByCategory={store.robByCategory}
+          avgConsumption={avgConsumption}
+          onAvgConsumptionChange={handleAvgChange}
+          locale={locale}
+          sfocEntries={sfocEntries}
+          onSaveSFOC={handleSaveSFOC}
+          onDeleteSFOC={handleDeleteSFOC}
+          adFree={store.adFree}
+        />}
+          {screen==='tanks' && (
+          <>
+            <FuelTab
+              category={tanksCat}
+              tanks={store.tanks.filter(t=>t.category===tanksCat)}
+              rob={store.robByCategory(tanksCat)}
+              onAdd={(tank) => {
+                if (!tanksUnlocked && !store.adFree && store.tanks.length >= FREE_TANKS) {
+                  setShowTanksAdPrompt(true);
+                } else {
+                  store.addTank(tank);
+                }
+              }}
+              onUpdate={store.updateTank}
+              onDelete={store.deleteTank}
+              locale={locale}
+            />
+            {showTanksAdPrompt && (
+              <div className="fixed inset-0 bg-black/70 flex items-end justify-center z-50 p-4">
+                <div className="rounded-2xl border p-5 w-full max-w-sm space-y-3"
+                  style={{background:'var(--bg-card)', borderColor:'var(--border)'}}>
+                  <p className="font-bold text-center" style={{color:'var(--text-primary)'}}>Free limit: {FREE_TANKS} tanks</p>
+                  <p className="text-xs text-center" style={{color:'var(--text-muted)'}}>Watch a short ad to add unlimited tanks</p>
+                  <RewardedAd
+                    label="Watch ad to add more tanks"
+                    description="Unlocks unlimited tanks"
+                    onRewarded={() => { setTanksUnlocked(true); setShowTanksAdPrompt(false); }}
+                  />
+                  <button onClick={() => setShowTanksAdPrompt(false)}
+                    className="w-full py-2 text-sm rounded-xl transition-colors"
+                    style={{color:'var(--text-muted)', background:'var(--bg-input)'}}>Cancel</button>
+                </div>
+              </div>
+            )}
+          </>
+        )}
         {screen==='log' && logTab==='consumption' && <ConsumptionTab log={store.consumptionLog} onAdd={store.addConsumption} onDelete={store.delConsumption} onEdit={store.editConsumption} />}
         {screen==='log' && logTab==='bunker' && <BunkerTab log={store.bunkerLog} onAdd={store.addBunker} onDelete={store.delBunker} onEdit={store.editBunker} />}
         {screen==='crew' && crewTab==='contract' && <ContractTab contract={store.contract} contractHistory={store.contractHistory} onSave={store.saveContract} onFinish={store.finishContract} onDeleteHistory={store.deleteFinished} locale={locale} />}

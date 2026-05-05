@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Calculator, Trash2, TrendingDown, Zap, Ship, HelpCircle, X } from 'lucide-react';
+import RewardedAd from './RewardedAd';
 
 interface SFOCEntry {
   id: string;
@@ -21,6 +22,7 @@ interface Props {
   onSaveEntry: (entry: SFOCEntry) => void;
   entries: SFOCEntry[];
   onDeleteEntry: (id: string) => void;
+  adFree?: boolean;
 }
 
 function calculateConsumption(meMCR: number, aeMCR: number, meLoad: number, aeLoad: number, sfoc: number, hours: number) {
@@ -31,23 +33,26 @@ function calculateConsumption(meMCR: number, aeMCR: number, meLoad: number, aeLo
   return { me, ae, total: me + ae };
 }
 
-export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: Props) {
+export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry, adFree }: Props) {
   const [engineType, setEngineType] = useState<'ME' | 'AE'>('ME');
   const [meMCR, setMeMCR] = useState<string>('5000');
-  const [aeMCR, setAeMCR] = useState<string>('500');  
+  const [aeMCR, setAeMCR] = useState<string>('500');
   const [meLoad, setMeLoad] = useState(75);
   const [aeLoad, setAeLoad] = useState(30);
   const [speed, setSpeed] = useState(12);
   const [hours, setHours] = useState(24);
   const [sfoc, setSfoc] = useState(190);
   const [showHelp, setShowHelp] = useState(false);
+  const [comparisonUnlocked, setComparisonUnlocked] = useState(false);
+  const FREE_ENTRIES = 3;
 
   const { me: meConsumption, ae: aeConsumption, total: totalConsumption } =
-  calculateConsumption(
-    parseFloat(meMCR) || 5000,
-    parseFloat(aeMCR) || 500,
-    meLoad, aeLoad, sfoc, hours
-  );
+    calculateConsumption(
+      parseFloat(meMCR) || 5000,
+      parseFloat(aeMCR) || 500,
+      meLoad, aeLoad, sfoc, hours
+    );
+
   const fmt = (n: number | undefined) => (n ?? 0).toFixed(2);
 
   const maxTotal = entries.length > 0
@@ -65,6 +70,9 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
       meConsumption, aeConsumption, totalConsumption,
     });
   };
+
+  const visibleEntries = (comparisonUnlocked || adFree) ? entries : entries.slice(0, FREE_ENTRIES);
+
   return (
     <div className="th-card border rounded-2xl overflow-hidden">
 
@@ -92,19 +100,19 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
             <div className="rounded-xl p-3 text-xs space-y-2" style={{background:'var(--bg-input)', color:'var(--text-secondary)'}}>
               <p className="font-bold" style={{color:'var(--text-primary)'}}>Main Formula:</p>
               <p className="font-mono text-sky-400">Consumption (MT) =</p>
-              <p className="font-mono text-sky-400 pl-2">(SFOC × Power × Hours)</p>
-              <p className="font-mono text-sky-400 pl-2">÷ 1,000,000</p>
+              <p className="font-mono text-sky-400 pl-2">(SFOC x Power x Hours)</p>
+              <p className="font-mono text-sky-400 pl-2">/ 1,000,000</p>
             </div>
             <div className="text-xs space-y-1.5" style={{color:'var(--text-secondary)'}}>
-              <p><span className="font-semibold" style={{color:'var(--text-primary)'}}>SFOC</span> — Specific Fuel Oil Consumption (g/kWh). Typical ME: 160–200 g/kWh</p>
-              <p><span className="font-semibold" style={{color:'var(--text-primary)'}}>Power (kW)</span> = MCR × Load% ÷ 100</p>
+              <p><span className="font-semibold" style={{color:'var(--text-primary)'}}>SFOC</span> — Specific Fuel Oil Consumption (g/kWh). Typical ME: 160-200 g/kWh</p>
+              <p><span className="font-semibold" style={{color:'var(--text-primary)'}}>Power (kW)</span> = MCR x Load% / 100</p>
               <p><span className="font-semibold" style={{color:'var(--text-primary)'}}>MCR</span> — Maximum Continuous Rating of engine (kW)</p>
               <p><span className="font-semibold" style={{color:'var(--text-primary)'}}>Hours</span> — operating hours per day (max 24)</p>
             </div>
             <div className="rounded-xl p-3 text-xs" style={{background:'var(--bg-input)'}}>
               <p className="font-semibold mb-1" style={{color:'var(--text-primary)'}}>Example:</p>
               <p style={{color:'var(--text-muted)'}}>SFOC=190, MCR=5000kW, Load=75%, Hours=24</p>
-              <p style={{color:'#34d399'}}>= (190 × 3750 × 24) ÷ 1,000,000 = <strong>17.1 MT/day</strong></p>
+              <p style={{color:'#34d399'}}>= (190 x 3750 x 24) / 1,000,000 = 17.1 MT/day</p>
             </div>
             <button onClick={() => setShowHelp(false)}
               className="w-full bg-sky-600 hover:bg-sky-500 text-white rounded-xl py-2.5 text-sm font-medium transition-colors">
@@ -140,8 +148,7 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
               className="th-input w-full rounded-xl px-3 py-2.5 text-sm border focus:border-sky-500 focus:outline-none"
               value={meMCR}
               onChange={e => setMeMCR(e.target.value)}
-              onBlur={() => { if (!meMCR || parseFloat(meMCR) < 100) setMeMCR('5000'); }}
-            />
+              onBlur={() => { if (!meMCR || parseFloat(meMCR) < 100) setMeMCR('5000'); }}/>
           </div>
           <div>
             <label className="text-xs mb-1.5 block" style={{color:'var(--text-muted)'}}>AE MCR (kW)</label>
@@ -149,10 +156,10 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
               className="th-input w-full rounded-xl px-3 py-2.5 text-sm border focus:border-sky-500 focus:outline-none"
               value={aeMCR}
               onChange={e => setAeMCR(e.target.value)}
-              onBlur={() => { if (!aeMCR || parseFloat(aeMCR) < 50) setAeMCR('500'); }}
-            />
+              onBlur={() => { if (!aeMCR || parseFloat(aeMCR) < 50) setAeMCR('500'); }}/>
           </div>
         </div>
+
         {/* SFOC + Hours */}
         <div className="grid grid-cols-2 gap-3">
           <div>
@@ -174,12 +181,12 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-xs" style={{color:'var(--text-muted)'}}>
-                ME Load <span style={{color:'var(--text-muted)'}}>({((meMCR * meLoad) / 100).toFixed(0)} kW)</span>
+                ME Load <span style={{color:'var(--text-muted)'}}>({((parseFloat(meMCR)||5000) * meLoad / 100).toFixed(0)} kW)</span>
               </label>
               <div className="flex items-center gap-2">
                 <button onClick={() => setMeLoad(v => Math.max(0, v-1))}
                   className="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors hover:bg-slate-600"
-                  style={{background:'var(--bg-input)', color:'var(--text-primary)'}}>−</button>
+                  style={{background:'var(--bg-input)', color:'var(--text-primary)'}}>-</button>
                 <span className="text-sm font-bold w-8 text-center" style={{color:'var(--text-primary)'}}>{meLoad}%</span>
                 <button onClick={() => setMeLoad(v => Math.min(100, v+1))}
                   className="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors hover:bg-slate-600"
@@ -199,12 +206,12 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
           <div>
             <div className="flex justify-between items-center mb-2">
               <label className="text-xs" style={{color:'var(--text-muted)'}}>
-                AE Load <span style={{color:'var(--text-muted)'}}>({((aeMCR * aeLoad) / 100).toFixed(0)} kW)</span>
+                AE Load <span style={{color:'var(--text-muted)'}}>({((parseFloat(aeMCR)||500) * aeLoad / 100).toFixed(0)} kW)</span>
               </label>
               <div className="flex items-center gap-2">
                 <button onClick={() => setAeLoad(v => Math.max(0, v-1))}
                   className="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors hover:bg-slate-600"
-                  style={{background:'var(--bg-input)', color:'var(--text-primary)'}}>−</button>
+                  style={{background:'var(--bg-input)', color:'var(--text-primary)'}}>-</button>
                 <span className="text-sm font-bold w-8 text-center" style={{color:'var(--text-primary)'}}>{aeLoad}%</span>
                 <button onClick={() => setAeLoad(v => Math.min(100, v+1))}
                   className="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors hover:bg-slate-600"
@@ -226,7 +233,7 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
             <div className="flex items-center gap-2">
               <button onClick={() => setSpeed(v => Math.max(0, parseFloat((v-0.5).toFixed(1))))}
                 className="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center hover:bg-slate-600"
-                style={{background:'var(--bg-input)', color:'var(--text-primary)'}}>−</button>
+                style={{background:'var(--bg-input)', color:'var(--text-primary)'}}>-</button>
               <span className="text-sm font-bold w-12 text-center" style={{color:'var(--text-primary)'}}>{speed.toFixed(1)} kn</span>
               <button onClick={() => setSpeed(v => Math.min(30, parseFloat((v+0.5).toFixed(1))))}
                 className="w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center hover:bg-slate-600"
@@ -275,7 +282,7 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
             <TrendingDown size={13}/> Comparison ({entries.length} entries)
           </h4>
           <div className="space-y-2">
-            {entries.slice(0, 10).map((e, i) => (
+            {visibleEntries.map((e, i) => (
               <div key={e.id} className="rounded-xl p-3 border" style={{background:'var(--bg-input)', borderColor:'var(--border)'}}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -312,6 +319,20 @@ export default function SFOCCalculator({ onSaveEntry, entries, onDeleteEntry }: 
               </div>
             ))}
           </div>
+
+          {/* Rewarded ad - unlock full comparison */}
+          {!comparisonUnlocked && !adFree && entries.length > FREE_ENTRIES && (
+          <div className="pt-2 border-t" style={{borderColor:'var(--border)   '}}>
+              <p className="text-xs text-center mb-2" style={{color:'var(--text-muted)'}}>
+                +{entries.length - FREE_ENTRIES} more {entries.length - FREE_ENTRIES === 1 ? 'entry' : 'entries'} hidden
+              </p>
+              <RewardedAd
+                label="Watch ad to see all entries"
+                description="Unlocks full SFOC comparison chart"
+                onRewarded={() => setComparisonUnlocked(true)}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
