@@ -1,10 +1,10 @@
 apply plugin: 'com.android.application'
 
 android {
-    namespace = "com.marinerob.app"
+    namespace = "com.valeriy.marinerob"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.marinerob.app"
+        applicationId "com.valeriy.marinerob"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
