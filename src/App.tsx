@@ -83,7 +83,7 @@ const handleDeleteSFOC = (id: string) => {
   const bottomPad = store.adFree ? 'pb-20' : 'pb-32';
 
   return (
-    <div className="flex flex-col w-full" style={{minHeight:'100dvh',background:'var(--bg-base)',color:'var(--text-primary)'}}>
+    <div className="flex flex-col max-w-2xl mx-auto" style={{minHeight:'100dvh',background:'var(--bg-base)',color:'var(--text-primary)'}}>
       <header className="px-4 py-3 flex items-center gap-3 sticky top-0 z-40"
         style={{background:'var(--bg-nav)',borderBottom:'1px solid var(--border)'}}>
         <img src="./icon.svg" alt="Marine ROB" className="w-9 h-9 rounded-xl" />
@@ -189,7 +189,7 @@ const handleDeleteSFOC = (id: string) => {
         {screen==='settings' && <SettingsScreen theme={theme} locale={locale} adFree={store.adFree} onTheme={handleTheme} onLocale={setLocale} onRemoveAds={()=>setShowAdPrompt(true)} />}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 w-full"
+      <nav className="fixed bottom-0 left-0 right-0 z-40 max-w-2xl mx-auto"
         style={{background:'var(--bg-nav)',borderTop:'1px solid var(--border)',paddingBottom:'env(safe-area-inset-bottom,8px)'}}>
         {!store.adFree && <AdBanner />}
         <div className="flex">

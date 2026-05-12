@@ -1,12 +1,9 @@
-﻿import type { CapacitorConfig } from '@capacitor/cli';
+﻿import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.valeriy.marinerob',
   appName: 'Marine ROB',
-  webDir: 'dist'
+  webDir: 'dist',
 };
 
 export default config;
-
-
-

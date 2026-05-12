@@ -1,4 +1,4 @@
-package com.marinerob.app;
+package com.valeriy.marinerob;
 
 import com.getcapacitor.BridgeActivity;
 

@@ -24,14 +24,9 @@
   --text-muted: #64748b;
 }
 
-html, body {
+body {
   background-color: var(--bg-base);
   color: var(--text-primary);
-  transition: background-color 0.2s, color 0.2s;
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  min-height: 100dvh;
 }
 
 .th-card {
