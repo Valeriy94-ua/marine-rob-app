@@ -11,7 +11,7 @@ export interface Tank {
   customLabel?: string;
 }
 
-export const VCF_ALPHA: Record<FuelCategory, number> = {
+export const VCF_ALPHA: Record<string, number> = {
   HFO: 0.00060,
   VLSFO: 0.00065,
   MDO: 0.00085,
@@ -20,15 +20,62 @@ export const VCF_ALPHA: Record<FuelCategory, number> = {
   CUSTOM: 0.00060,
 };
 
-export function calcVCF(category: FuelCategory, tempC: number): number {
+export function calcVCF(category: string, tempC: number): number {
   const alpha = VCF_ALPHA[category] ?? 0.00060;
   const deltaT = tempC - 15;
   return 1 - alpha * deltaT;
 }
 
-export function calcMassWithTemp(volumeM3: number, density: number, category: FuelCategory, tempC: number): number {
+export function calcMassWithTemp(volumeM3: number, density: number, category: string, tempC: number): number {
   const vcf = calcVCF(category, tempC);
   return volumeM3 * vcf * density;
+}
+
+export function litersToMT(liters: number, density15: number, category: FuelCategory, tempC: number): number {
+  return calcMassWithTemp(liters / 1000, density15, category, tempC);
+}
+
+export interface FuelParams {
+  category: FuelCategory;
+  density15: number;
+  tempC: number;
+}
+
+export interface FlowmeterReading {
+  supply: number;
+  return_: number;
+  periodH: number;
+}
+
+export type OperatingMode = 'voyage' | 'port' | 'maneuvering';
+
+export interface ConsumptionLogEntry {
+  id: string;
+  date: string;
+  periodH: number;
+  mode: OperatingMode;
+  me: {
+    factMT: number; theoryMT: number; loadKw: number; sfoc: number;
+    mcr?: number; runHours?: number;
+    fuel?: { category: string; density15: number; tempC: number; vcf: number; useVCF: boolean; };
+    netL?: number;
+  };
+  gen: {
+    factMT: number; theoryMT: number; loadKw: number; sfoc: number; count: number;
+    items?: Array<{
+      factMT: number; theoryMT: number; loadKw: number; sfoc: number;
+      kwhBefore?: number; kwhAfter?: number; runHours?: number;
+      fuel?: { category: string; density15: number; tempC: number; vcf: number; useVCF: boolean; };
+      netL?: number;
+    }>;
+  };
+  boiler: {
+    factMT: number;
+    fuel?: { category: string; density15: number; tempC: number; vcf: number; useVCF: boolean; };
+    netL?: number;
+  };
+  totalFactMT: number;
+  totalTheoryMT: number;
 }
 
 export interface BunkerEntry {

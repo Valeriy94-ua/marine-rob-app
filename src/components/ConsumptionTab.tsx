@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect  } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, Ship, Zap, Flame, HelpCircle, X, Save, TrendingDown, Copy, CheckCheck } from 'lucide-react';
 import type { FuelCategory, FuelParams, FlowmeterReading, ConsumptionLogEntry, OperatingMode } from '../types';
 import { calcVCF, DEFAULT_DENSITY, FUEL_LABELS, VCF_ALPHA } from '../types';
@@ -196,43 +196,81 @@ function RunHoursCounter({ prevH, currH, manualH, onChange, onManualChange, labe
 }
 
 // ── kWh counter (for ME and Gen) ──
-function KwhCounter({ prev, curr, manualKw, onChange, onManualChange, label }: {
-  prev: string; curr: string; manualKw: string;
-  onChange: (prev: string, curr: string) => void;
-  onManualChange: (v: string) => void;
+function KwhCounter({ prevInit, currInit, manualKwInit, onUpdate, mcr, label }: {
+  prevInit: string; currInit: string; manualKwInit: string;
+  onUpdate: (prev: string, curr: string, manualKw: string, effectiveKw: number) => void;
+  mcr?: number;
   label: string;
 }) {
+  const [prev, setPrev] = useState(prevInit);
+  const [curr, setCurr] = useState(currInit);
+  const [manual, setManual] = useState(manualKwInit);
+
+  // Sync when parent resets fields to ''
+  useEffect(() => { if (prevInit === '') setPrev(''); }, [prevInit]);
+  useEffect(() => { if (currInit === '') setCurr(''); }, [currInit]);
+  useEffect(() => { if (manualKwInit === '') setManual(''); }, [manualKwInit]);
+
   const diff = (parseFloat(curr)||0) - (parseFloat(prev)||0);
   const hasCounter = prev !== '' || curr !== '';
-  const effectiveKw = diff > 0 ? diff : parseFloat(manualKw)||0;
+  const effectiveKw = hasCounter && diff > 0 ? diff : parseFloat(manual)||0;
+
+  const notify = (p: string, c: string, m: string) => {
+    const d = (parseFloat(c)||0) - (parseFloat(p)||0);
+    const eff = (p!==''||c!=='') && d > 0 ? d : parseFloat(m)||0;
+    onUpdate(p, c, m, eff);
+  };
 
   return (
     <div className="rounded-xl p-3 space-y-2" style={{background:'var(--bg-input)'}}>
       <p className="text-xs font-medium" style={{color:'var(--text-primary)'}}>⚡ {label} counter (kW)</p>
       <div className="grid grid-cols-3 gap-2">
-        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Previous</label>
-          <input type="number" step="1" placeholder="—" className="th-input w-full rounded-lg px-2 py-2 text-xs border"
-            value={prev} onChange={e => { onChange(e.target.value, curr); if(e.target.value) onManualChange(''); }} /></div>
-        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Current</label>
-          <input type="number" step="1" placeholder="—" className="th-input w-full rounded-lg px-2 py-2 text-xs border"
-            value={curr} onChange={e => { onChange(prev, e.target.value); if(e.target.value) onManualChange(''); }} /></div>
         <div>
-          <label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>{hasCounter ? '= Load (kW)' : 'Load (kW)'}</label>
+          <label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Previous</label>
+          <input type="number" step="1" placeholder="—"
+            className="th-input w-full rounded-lg px-2 py-2 text-xs border"
+            value={prev}
+            onChange={e => { setPrev(e.target.value); setManual(''); notify(e.target.value, curr, ''); }}
+          />
+        </div>
+        <div>
+          <label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Current</label>
+          <input type="number" step="1" placeholder="—"
+            className="th-input w-full rounded-lg px-2 py-2 text-xs border"
+            value={curr}
+            onChange={e => { setCurr(e.target.value); setManual(''); notify(prev, e.target.value, ''); }}
+          />
+        </div>
+        <div>
+          <label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>
+            {hasCounter ? '= Load (kW)' : 'Load (kW)'}
+          </label>
           {hasCounter
-            ? <input type="number" className="th-input w-full rounded-lg px-2 py-2 text-xs border opacity-60"
-                value={diff > 0 ? diff : ''} readOnly />
-            : <input type="number" step="1" placeholder="0" className="th-input w-full rounded-lg px-2 py-2 text-xs border"
-                value={manualKw}
-                onChange={e => { onManualChange(e.target.value); onChange('',''); }}
+            ? <input type="number" readOnly
+                className="th-input w-full rounded-lg px-2 py-2 text-xs border opacity-60"
+                value={diff > 0 ? diff : ''}
+              />
+            : <input type="number" step="1" placeholder="0"
+                className="th-input w-full rounded-lg px-2 py-2 text-xs border"
+                value={manual}
+                onChange={e => { setManual(e.target.value); setPrev(''); setCurr(''); notify('', '', e.target.value); }}
               />
           }
         </div>
       </div>
-      {effectiveKw > 0 && <p className="text-xs" style={{color:'var(--text-muted)'}}>Load: <b style={{color:'#38bdf8'}}>{effectiveKw.toFixed(0)} kW</b></p>}
+      {effectiveKw > 0 && (
+        <p className="text-xs" style={{color:'var(--text-muted)'}}>
+          Load: <b style={{color:'#38bdf8'}}>{effectiveKw.toFixed(0)} kW</b>
+        </p>
+      )}
+      {effectiveKw > 0 && mcr && mcr > 0 && (
+        <p className="text-xs" style={{color:'var(--text-muted)'}}>
+          MCR: <b style={{color:'#38bdf8'}}>{(effectiveKw/mcr*100).toFixed(1)}%</b>
+        </p>
+      )}
     </div>
   );
 }
-
 // ── Collapsible section ──
 function Section({ title, icon, children, defaultOpen = false }: {
   title: string; icon: React.ReactNode; children: React.ReactNode; defaultOpen?: boolean;
@@ -432,11 +470,12 @@ function LogEntryModal({ entry, onClose, onDelete }: {
 
 // ── State types ──
 interface MEState {
-  id: string; enabled: boolean; mcr: string; loadKw: string; sfoc: string;
+  id: string; enabled: boolean; mcr: string; sfoc: string;
   fuel: FuelParams; useVCF: boolean;
   fm: FlowmeterReading|null; manualL: string;
   runHPrev: string; runHCurr: string; manualRunH: string;
   kwPrev: string; kwCurr: string; manualKw: string;
+  effectiveKw: number;
 }
 interface GenState {
   id: string; sfoc: string; fuel: FuelParams; useVCF: boolean;
@@ -459,7 +498,7 @@ function defaultFuel(cat: FuelCategory = 'HFO'): FuelParams {
 }
 
 function defaultME(id?: string): MEState {
-  return { id: id||uid(), enabled: true, mcr: '5000', loadKw: '3750', sfoc: '190', fuel: defaultFuel('HFO'), useVCF: true, fm: null, manualL: '', runHPrev: '', runHCurr: '', manualRunH: '', kwPrev: '', kwCurr: '', manualKw: '' };
+  return { id: id||uid(), enabled: true, mcr: '5000', sfoc: '190', fuel: defaultFuel('HFO'), useVCF: true, fm: null, manualL: '', runHPrev: '', runHCurr: '', manualRunH: '', kwPrev: '', kwCurr: '', manualKw: '', effectiveKw: 0 };
 }
 function defaultBoiler(id?: string): BoilerState {
   return { id: id||uid(), enabled: false, fuel: defaultFuel('HFO'), useVCF: true, fm: null, manualL: '', runHPrev: '', runHCurr: '', manualRunH: '' };
@@ -521,25 +560,26 @@ export default function ConsumptionTab({ log, onAdd, onDelete }: Props) {
   const updateGen = (id: string, patch: Partial<GenState>) => setGens(g => g.map(x => x.id===id?{...x,...patch}:x));
   const toggleGen = (id: string) => setExpandedGens(s => { const n = new Set(s); n.has(id)?n.delete(id):n.add(id); return n; });
 
-  const meCalcs = mes.map(me => {
-    const rhCalc = calcRunHours(me.runHPrev, me.runHCurr);
-    const rh = rhCalc || parseFloat(me.manualRunH)||periodH;
-    const kwDiff = (parseFloat(me.kwCurr)||0) - (parseFloat(me.kwPrev)||0);
-    const hasKwCounter = me.kwPrev !== '' || me.kwCurr !== '';
-    const loadKw = hasKwCounter && kwDiff > 0 ? kwDiff : (parseFloat(me.manualKw)||0) || (parseFloat(me.loadKw)||0);
+ const meCalcs = mes.map(me => {
+  const rh = calcRunHours(me.runHPrev, me.runHCurr) || parseFloat(me.manualRunH) || periodH;
+  const loadKw = me.effectiveKw > 0
+    ? me.effectiveKw
+    : (() => {
+        const d = (parseFloat(me.kwCurr)||0) - (parseFloat(me.kwPrev)||0);
+        return (me.kwPrev!==''||me.kwCurr!=='') && d > 0 ? d : parseFloat(me.manualKw)||0;
+      })();
     return {
       id: me.id, enabled: me.enabled,
       factMT: me.enabled ? calcFact(me.fm, me.manualL, me.fuel, me.useVCF) : 0,
       theoryMT: me.enabled ? theoryMT(loadKw, me.sfoc, rh) : 0,
       loadKw, runH: rh,
-      pct: me.mcr ? (loadKw/(parseFloat(me.mcr)||1)*100).toFixed(1) : null,
+      pct: me.mcr ? (loadKw / (parseFloat(me.mcr)||1) * 100).toFixed(1) : null,
       sfoc: parseFloat(me.sfoc)||0,
       netL: getNetL(me.fm, me.manualL),
       fuel: me.fuel, useVCF: me.useVCF,
       mcr: parseFloat(me.mcr)||undefined,
     };
   });
-
   const genResults = gens.filter(g => g.enabled).map(g => {
     const rhCalc = calcRunHours(g.runHPrev, g.runHCurr);
     const rh = rhCalc || parseFloat(g.runHours)||periodH;
@@ -674,7 +714,7 @@ export default function ConsumptionTab({ log, onAdd, onDelete }: Props) {
                 <Ship size={15} style={{color:'#38bdf8'}}/>
                 <span className="font-semibold text-sm" style={{color:'var(--text-primary)'}}>{label}</span>
                 {!me.enabled && <span className="text-xs px-2 py-0.5 rounded-lg" style={{background:'var(--bg-input)',color:'var(--text-muted)'}}>off</span>}
-                {me.enabled && <span className="text-xs" style={{color:'var(--text-muted)'}}>{me.loadKw} kW{calc?.pct?` · ${calc.pct}% MCR`:''}</span>}
+                {me.enabled && calc && calc.loadKw > 0 && <span className="text-xs" style={{color:'var(--text-muted)'}}>{calc.loadKw.toFixed(0)} kW{calc.pct?` · ${calc.pct}% MCR`:''}</span>}
               </div>
               <div className="flex items-center gap-3">
                 {me.enabled && calc && calc.factMT>0 && <span className="text-xs font-bold text-amber-400">{fmt(calc.factMT,3)} MT</span>}
@@ -691,16 +731,17 @@ export default function ConsumptionTab({ log, onAdd, onDelete }: Props) {
                 {me.enabled && (
                   <>
                     <Section title="Power" icon={<Zap size={12} style={{color:'#38bdf8'}}/>} defaultOpen>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>MCR (kW) opt.</label>
-                          <input type="number" placeholder="5000" className="th-input w-full rounded-lg px-2 py-2 text-sm border" value={me.mcr} onChange={e=>updateME(me.id,{mcr:e.target.value})} /></div>
-                        <div><label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>Load manual (kW)</label>
-                          <input type="number" placeholder="0" className="th-input w-full rounded-lg px-2 py-2 text-sm border" value={me.loadKw} onChange={e=>updateME(me.id,{loadKw:e.target.value,manualKw:'',kwPrev:'',kwCurr:''})} /></div>
+                      <div>
+                        <label className="text-xs mb-1 block" style={{color:'var(--text-muted)'}}>MCR (kW) optional</label>
+                        <input type="number" placeholder="5000" className="th-input w-full rounded-lg px-2 py-2 text-sm border"
+                          value={me.mcr} onChange={e=>updateME(me.id,{mcr:e.target.value})} />
                       </div>
                       <KwhCounter
-                        prev={me.kwPrev} curr={me.kwCurr} manualKw={me.manualKw}
-                        onChange={(p,c) => updateME(me.id,{kwPrev:p,kwCurr:c,loadKw:''})}
-                        onManualChange={v => updateME(me.id,{manualKw:v,kwPrev:'',kwCurr:'',loadKw:''})}
+                        prevInit={me.kwPrev}
+                        currInit={me.kwCurr}
+                        manualKwInit={me.manualKw}
+                        onUpdate={(p, c, m, eff) => updateME(me.id, {kwPrev:p, kwCurr:c, manualKw:m, effectiveKw:eff})}
+                        mcr={parseFloat(me.mcr)||0}
                         label="Power"
                       />
                       <RunHoursCounter prevH={me.runHPrev} currH={me.runHCurr} manualH={me.manualRunH} label="Running hours" onChange={(p,c)=>updateME(me.id,{runHPrev:p,runHCurr:c})} onManualChange={v=>updateME(me.id,{manualRunH:v})} />
